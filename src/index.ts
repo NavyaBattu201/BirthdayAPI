@@ -1,12 +1,18 @@
-const mongoose = require("mongoose");
+// const mongoose = require("mongoose");
 require('dotenv').config();
-const dburl = process.env.DB_URL;
+const dburl:string = process.env.DB_URL!;
 const dbport = process.env.DB_PORT;
-
+import mongoose, { Document } from "mongoose";
+import express from "express";
+import bodyParser from "body-parser";
 mongoose.connect(dburl).then(() => {
     console.log("connection successful");
-}).catch((err) => console.log(err));
+}).catch((err:string) => console.log(err));
 
+interface IUser extends Document {
+    name: string;
+    birthday: string;
+  }
 
 const appSchema = new mongoose.Schema({
     name: { type: String,
@@ -14,7 +20,7 @@ const appSchema = new mongoose.Schema({
     birthday: {
         type: String,
         validate: {
-            validator: function(value) {
+            validator: function(value:string) {
               return /^\d{8}$/.test(value);
             },
             message: 'Birthday must be in the format DDMMYYYY'
@@ -22,9 +28,9 @@ const appSchema = new mongoose.Schema({
     }
 });
 let user = mongoose.model('user', appSchema);
-const express = require("express");
+// const express = require('express');
 const app = express();
-const bodyParser = require("body-parser");
+// const bodyParser = require("body-parser");
 app.use(bodyParser.json());
 
 //adding new user
@@ -37,18 +43,18 @@ app.post('/', async (req, res) => {
         console.log('successfully saved');
     } catch (err) {
         console.error(err)
-        res.status(409).send(err.message);
+        res.status(409).send(err);
     }
 });
 //nearest birthday
 app.get('/nearestbirthday', async (req, res) => {
-    user.find({})
-    .then(allUsers => {
-        let today = new Date();
-        currentDay = today.getDate();
-        currentMonth = today.getMonth() + 1;
+    try {
+        const allUsers:IUser[] = await user.find({});
+        const today = new Date();
+        const currentDay = today.getDate();
+        const currentMonth = today.getMonth() + 1;
         let minDiff = 12;
-        diffInMonth = []
+        let diffInMonth: number[] = [];
         for (let i = 0; i < allUsers.length; i++) {
             const month = parseInt(allUsers[i].birthday.substring(2, 4));
             const day = parseInt(allUsers[i].birthday.substring(0, 2));
@@ -60,24 +66,24 @@ app.get('/nearestbirthday', async (req, res) => {
                     minDiff = diffInMonth[i];
                 }
             } else diffInMonth[i] = 13;
-
         }
         let x = 0;
         let minDiffDate = 32;
         for (let i = 0; i < allUsers.length; i++) {
             const day = parseInt(allUsers[i].birthday.substring(0, 2));
-            if(minDiff==0&&diffInMonth[i]==0&&(day-currentDay)<minDiffDate&&(day-currentDay)>=0){
-                minDiffDate=(day-currentDay);x=i;
-            }else if(minDiff!=0&&diffInMonth[i]==minDiff&&day<minDiffDate){
-                minDiffDate=day;x=i;
+            if (minDiff == 0 && diffInMonth[i] == 0 && (day - currentDay) < minDiffDate && (day - currentDay) >= 0) {
+                minDiffDate = (day - currentDay);
+                x = i;
+            } else if (minDiff != 0 && diffInMonth[i] == minDiff && day < minDiffDate) {
+                minDiffDate = day;
+                x = i;
             }
         }
         res.status(200).send(allUsers[x]);
-    })
-    .catch(error => {
+    } catch (error) {
         console.error(error);
-
-    });
+        res.status(500).send("Internal server error");
+    }
 });
 
 //udating
