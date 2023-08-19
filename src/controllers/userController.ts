@@ -1,55 +1,26 @@
-// const mongoose = require("mongoose");
-require('dotenv').config();
-const dburl:string = process.env.DB_URL!;
-const dbport = process.env.DB_PORT;
-import mongoose, { Document } from "mongoose";
-import express from "express";
-import bodyParser from "body-parser";
-mongoose.connect(dburl).then(() => {
-    console.log("connection successful");
-}).catch((err:string) => console.log(err));
-
-interface IUser extends Document {
+import { Request, Response } from "express";
+import User from "../models/userModel";
+import  { Document } from "mongoose";
+interface IUser extends Document{
     name: string;
     birthday: string;
-  }
+}
 
-const appSchema = new mongoose.Schema({
-    name: { type: String,
-        unique: true },
-    birthday: {
-        type: String,
-        validate: {
-            validator: function(value:string) {
-              return /^\d{8}$/.test(value);
-            },
-            message: 'Birthday must be in the format DDMMYYYY'
-          },
-    }
-});
-let user = mongoose.model('user', appSchema);
-// const express = require('express');
-const app = express();
-// const bodyParser = require("body-parser");
-app.use(bodyParser.json());
-
-//adding new user
-app.post('/', async (req, res) => {
+export const createUser = async (req: Request, res: Response) => {
     let newUser = req.body;
     try {
-        var newData = new user(newUser);
+        const newData = new User(newUser);
         await newData.save()
-        res.status(201).send("successfully saved");
-        console.log('successfully saved');
+        return res.status(201).send("successfully saved");
     } catch (err) {
         console.error(err)
         res.status(409).send(err);
     }
-});
-//nearest birthday
-app.get('/nearestbirthday', async (req, res) => {
+};
+
+export const getNearestBirthday = async (req: Request, res: Response) => {
     try {
-        const allUsers:IUser[] = await user.find({});
+        const allUsers:IUser[] = await User.find({});
         const today = new Date();
         const currentDay = today.getDate();
         const currentMonth = today.getMonth() + 1;
@@ -79,52 +50,45 @@ app.get('/nearestbirthday', async (req, res) => {
                 x = i;
             }
         }
-        res.status(200).send(allUsers[x]);
+        return res.status(200).send(allUsers[x]);
     } catch (error) {
         console.error(error);
         res.status(500).send("Internal server error");
     }
-});
+};
 
-//udating
-app.put('/person/:name', async (req, res) => {
+export const updatePerson = async (req: Request, res: Response) => {
     try {
-        const useritem = await user.findOneAndUpdate({ name: req.params.name }, { birthday: req.body.birthday });
+        const useritem = await User.findOneAndUpdate({ name: req.params.name }, { birthday: req.body.birthday });
         if (useritem) {
             return res.status(201).send("updated")
         }
-        res.status(409).send("user not found");
+        return res.status(409).send("user not found");
     } catch (err) {
         console.error(err);
     }
-});
-//delete specific persons 
-app.delete('/person/:name', async (req, res) => {
+};
+
+export const deletePerson = async (req: Request, res: Response) => {
     try {
-        const useritem = await user.findOneAndDelete({ name: req.params.name });
+        const useritem = await User.findOneAndDelete({ name: req.params.name });
         if (useritem) {
             return res.status(200).send("deleted")
         }
-        res.status(404).send("user not found");
+        return res.status(404).send("user not found");
     } catch (err) {
         console.error(err);
     }
+};
 
-});
-//fetch a specific persons birthday
-app.get('/person/:name', async (req, res) => {
+export const getPersonBirthday = async (req: Request, res: Response) => {
     try {
-        const userItem = await user.findOne({ name: req.params.name });
+        const userItem = await User.findOne({ name: req.params.name });
         if (userItem) {
             return res.status(200).send(userItem.birthday);
         }
-        res.status(404).send("user not found");
+        return res.status(404).send("user not found");
     } catch (err) {
         console.error(err);
     }
-});
-
-
-app.listen(dbport, () => {
-    console.log("server running on port 3000");
-});
+};

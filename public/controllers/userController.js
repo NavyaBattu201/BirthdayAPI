@@ -12,52 +12,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// const mongoose = require("mongoose");
-require('dotenv').config();
-const dburl = process.env.DB_URL;
-const dbport = process.env.DB_PORT;
-const mongoose_1 = __importDefault(require("mongoose"));
-const express_1 = __importDefault(require("express"));
-const body_parser_1 = __importDefault(require("body-parser"));
-mongoose_1.default.connect(dburl).then(() => {
-    console.log("connection successful");
-}).catch((err) => console.log(err));
-const appSchema = new mongoose_1.default.Schema({
-    name: { type: String,
-        unique: true },
-    birthday: {
-        type: String,
-        validate: {
-            validator: function (value) {
-                return /^\d{8}$/.test(value);
-            },
-            message: 'Birthday must be in the format DDMMYYYY'
-        },
-    }
-});
-let user = mongoose_1.default.model('user', appSchema);
-// const express = require('express');
-const app = (0, express_1.default)();
-// const bodyParser = require("body-parser");
-app.use(body_parser_1.default.json());
-//adding new user
-app.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.getPersonBirthday = exports.deletePerson = exports.updatePerson = exports.getNearestBirthday = exports.createUser = void 0;
+const userModel_1 = __importDefault(require("../models/userModel"));
+const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let newUser = req.body;
     try {
-        var newData = new user(newUser);
+        const newData = new userModel_1.default(newUser);
         yield newData.save();
-        res.status(201).send("successfully saved");
-        console.log('successfully saved');
+        return res.status(201).send("successfully saved");
     }
     catch (err) {
         console.error(err);
         res.status(409).send(err);
     }
-}));
-//nearest birthday
-app.get('/nearestbirthday', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+exports.createUser = createUser;
+const getNearestBirthday = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const allUsers = yield user.find({});
+        const allUsers = yield userModel_1.default.find({});
         const today = new Date();
         const currentDay = today.getDate();
         const currentMonth = today.getMonth() + 1;
@@ -91,52 +63,50 @@ app.get('/nearestbirthday', (req, res) => __awaiter(void 0, void 0, void 0, func
                 x = i;
             }
         }
-        res.status(200).send(allUsers[x]);
+        return res.status(200).send(allUsers[x]);
     }
     catch (error) {
         console.error(error);
         res.status(500).send("Internal server error");
     }
-}));
-//udating
-app.put('/person/:name', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+exports.getNearestBirthday = getNearestBirthday;
+const updatePerson = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const useritem = yield user.findOneAndUpdate({ name: req.params.name }, { birthday: req.body.birthday });
+        const useritem = yield userModel_1.default.findOneAndUpdate({ name: req.params.name }, { birthday: req.body.birthday });
         if (useritem) {
             return res.status(201).send("updated");
         }
-        res.status(409).send("user not found");
+        return res.status(409).send("user not found");
     }
     catch (err) {
         console.error(err);
     }
-}));
-//delete specific persons 
-app.delete('/person/:name', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+exports.updatePerson = updatePerson;
+const deletePerson = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const useritem = yield user.findOneAndDelete({ name: req.params.name });
+        const useritem = yield userModel_1.default.findOneAndDelete({ name: req.params.name });
         if (useritem) {
             return res.status(200).send("deleted");
         }
-        res.status(404).send("user not found");
+        return res.status(404).send("user not found");
     }
     catch (err) {
         console.error(err);
     }
-}));
-//fetch a specific persons birthday
-app.get('/person/:name', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+exports.deletePerson = deletePerson;
+const getPersonBirthday = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const userItem = yield user.findOne({ name: req.params.name });
+        const userItem = yield userModel_1.default.findOne({ name: req.params.name });
         if (userItem) {
             return res.status(200).send(userItem.birthday);
         }
-        res.status(404).send("user not found");
+        return res.status(404).send("user not found");
     }
     catch (err) {
         console.error(err);
     }
-}));
-app.listen(dbport, () => {
-    console.log("server running on port 3000");
 });
+exports.getPersonBirthday = getPersonBirthday;
