@@ -18,7 +18,7 @@ export const createUser = async (req: Request, res: Response) => {
     }
 };
 
-export const getNearestBirthday = async (req: Request, res: Response) => {
+export const getNearestBirthdayapi = async (req: Request, res: Response) => {
     try {
         const allUsers:IUser[] = await User.find({});
         const today = new Date();
